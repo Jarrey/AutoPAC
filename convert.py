@@ -13,5 +13,5 @@ for networkItem in networkList:
         maxIpAddr = ipAddrs[1]
         minIp = int(ipaddress.IPv4Network(minIpAddr)[0])
         maxIp = int(ipaddress.IPv4Network(maxIpAddr)[0])
-        print(f'[{minIp},{maxIp}],')
+        print(f'[{minIp}, {maxIp}],')
 print('];')

@@ -68,6 +68,11 @@ function FindProxyForURL(url, host) {
         setCache(host, true);
         return no_proxy;
     }
-
+    
+    if (shExpMatch(ipAddr, "*:*:*:*")) {
+        setCache(host, true);
+        return no_proxy;
+    }
+    
     return getProxyByIP(ipAddr, host);
 }

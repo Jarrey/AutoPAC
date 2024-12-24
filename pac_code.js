@@ -1,5 +1,6 @@
 let no_proxy = 'DIRECT';
-let proxy = 'PROXY 192.168.2.12:9999; DIRECT; SOCKS5 192.168.2.12:10000';
+let hosts = "192.168.2.11:9999"
+// let hosts = "192.168.2.11:9999 192.168.2.12:9999"
 // cache map
 let hostMap = {};
 
@@ -24,16 +25,22 @@ function isCNIP(ipAddr) {
     return isInRange;
 }
 
+function getRandomProxy() {
+    var hostsArray = hosts.split(" ");
+    var randomIndex = Math.floor((Math.random() * hostsArray.length));
+    return "PROXY " + hostsArray[randomIndex] + "; " + no_proxy;
+}
+
 function getProxyByIP(ipAddr, host) {
     let is_cnip = isCNIP(ipAddr);
     alert('isCNIP: ' + is_cnip + ' : ' + host);
     setCache(host, is_cnip);
-    return is_cnip ? no_proxy : proxy;
+    return is_cnip ? no_proxy : getRandomProxy();
 }
 
 function getCache(host) {
     if (hostMap[host] != null) {
-        return hostMap[host] ? no_proxy : proxy;
+        return hostMap[host] ? no_proxy : getRandomProxy();
     }
     return null;
 }

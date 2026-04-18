@@ -1,6 +1,10 @@
 import ipaddress
+import os
 
-with open('c:\\auto_pac\\chn_ip.txt') as f:
+script_dir = os.path.dirname(os.path.abspath(__file__))
+chn_ip_path = os.path.join(script_dir, 'chn_ip.txt')
+
+with open(chn_ip_path) as f:
     networkList = f.readlines()
 
 networkList = [x.strip() for x in networkList]

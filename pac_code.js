@@ -1,76 +1,89 @@
 let no_proxy = 'DIRECT';
-let hosts = "192.168.2.11:9999"
-// let hosts = "192.168.2.11:9999 192.168.2.12:9999"
-// cache map
+let hosts = "192.168.2.11:9999";
+
 let hostMap = {};
+const MAX_CACHE_SIZE = 1000;
 
 function ip2int(ip) {
-    return ip.split('.').reduce(function (ipInt, octet) { return (ipInt << 8) + parseInt(octet, 10) }, 0) >>> 0;
+    return ip.split('.').reduce(function (ipInt, octet) {
+        return (ipInt << 8) + parseInt(octet, 10);
+    }, 0) >>> 0;
 }
 
 function isCNIP(ipAddr) {
-    intIp = ip2int(ipAddr);
-    if (intIp == 0) {
+    const intIp = ip2int(ipAddr);
+    
+    if (intIp === 0) {
         return true;
     }
-    let isInRange = false;
-    for (let i = 0; i < cnIp.length; i++) {
-        item = cnIp[i];
-        if (intIp >= item[0] && intIp <= item[1]) {
-            isInRange = true;
-            break;
+    
+    let left = 0;
+    let right = cnIp.length - 1;
+    
+    while (left <= right) {
+        const mid = Math.floor((left + right) / 2);
+        const range = cnIp[mid];
+        
+        if (intIp < range[0]) {
+            right = mid - 1;
+        } else if (intIp > range[1]) {
+            left = mid + 1;
+        } else {
+            return true;
         }
     }
-
-    return isInRange;
+    
+    return false;
 }
 
 function getRandomProxy() {
-    var hostsArray = hosts.split(" ");
-    var randomIndex = Math.floor((Math.random() * hostsArray.length));
+    const hostsArray = hosts.split(" ");
+    const randomIndex = Math.floor(Math.random() * hostsArray.length);
     return "PROXY " + hostsArray[randomIndex] + "; " + no_proxy;
 }
 
 function getProxyByIP(ipAddr, host) {
-    let is_cnip = isCNIP(ipAddr);
-    alert('isCNIP: ' + is_cnip + ' : ' + host);
-    setCache(host, is_cnip);
-    return is_cnip ? no_proxy : getRandomProxy();
+    const isChinaIP = isCNIP(ipAddr);
+    setCache(host, isChinaIP);
+    return isChinaIP ? no_proxy : getRandomProxy();
 }
 
 function getCache(host) {
-    if (hostMap[host] != null) {
+    if (host in hostMap) {
         return hostMap[host] ? no_proxy : getRandomProxy();
     }
     return null;
 }
 
-function setCache(host, noProxy) {
-    // clear cache in a simple way.
-    let cacheSize = Object.keys(hostMap).length;
-    alert('cache size: ' + cacheSize);
-    if (cacheSize > 99999) {
-        hostMap = {};
+function setCache(host, isChinaIP) {
+    const cacheSize = Object.keys(hostMap).length;
+    if (cacheSize >= MAX_CACHE_SIZE) {
+        const keys = Object.keys(hostMap);
+        const halfSize = Math.floor(keys.length / 2);
+        for (let i = 0; i < halfSize; i++) {
+            delete hostMap[keys[i]];
+        }
     }
-    hostMap[host] = noProxy;
+    hostMap[host] = isChinaIP;
 }
 
 function FindProxyForURL(url, host) {
-    if (isInNet(host, "192.168.0.0",  "255.255.0.0") ||
-        isInNet(host, "10.10.0.0",  "255.255.0.0") ||
-        shExpMatch(host, "*:*:*:*") ||
+    if (isInNet(host, "192.168.0.0", "255.255.0.0") ||
+        isInNet(host, "10.0.0.0", "255.0.0.0") ||
         isPlainHostName(host)) {
         return no_proxy;
     }
-
-    let cacheValue = getCache(host);
-    alert('cache value: ' + cacheValue + ' host: ' + host);
-    if (cacheValue) {
+    
+    if (shExpMatch(host, "*:*:*:*")) {
+        return no_proxy;
+    }
+    
+    const cacheValue = getCache(host);
+    if (cacheValue !== null) {
         return cacheValue;
     }
-
-    ipAddr = dnsResolve(host);
-    alert('DNS resolve: ' + ipAddr + ' host: ' + host);
+    
+    const ipAddr = dnsResolve(host);
     if (!ipAddr) {
         setCache(host, true);
         return no_proxy;
